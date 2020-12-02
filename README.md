@@ -1,5 +1,22 @@
 # Tiktok API 
 API Tiktok use Python
+## Get video no watermark 
+```python
+import requests
+
+url = "https://tiktok-video-no-watermark1.p.rapidapi.com/tiktok/nwm/6883765092236791041"
+
+headers = {
+    'x-rapidapi-key': [YOUR API KEY],
+    'x-rapidapi-host': "tiktok-video-no-watermark1.p.rapidapi.com"
+    }
+
+response = requests.request("GET", url, headers=headers)
+
+print(response.text)
+```
+https://rapidapi.com/AdKT36/api/tiktok-video-no-watermark1
+
 ## Tool download All video
 - Support downloading all video users on 4 platforms: TikTok, TikTok China (Douyin), Kwai, Kwai China (Kuaishou)
 - Video quality full HD
