@@ -67,23 +67,15 @@ print(challengefeed)
 trending = Api.getTrendingFeed('0')
 print(trending)
 ```
-## getVideoById
+
+## getInfoVideo
 ```python
-vid = Api.getVideoById('6897853325761350913')
-print(vid)
-```
-## getVideoByUrl
-```python
-vid = Api.getVideoByUrl('https://www.tiktok.com/@tiktok/video/6801895105885195526')
+vid = Api.getInfoVideo('https://www.tiktok.com/@tiktok/video/6801895105885195526')
 print(vid)
 ```
 
-## DownloadVideoByUrl
+## DownloadVideoNoWatermark
+Download video no watermark by id, select folder save: video
 ```python
-Api.DownloadVideoByUrl('https://www.tiktok.com/@tiktok/video/6801895105885195526')
-```
-
-## DownloadVideoByUrl
-```python
-Api.DownloadVideoById('6897853325761350913')
+Api.DownloadVideoNoWatermark('6897853325761350913', 'video')
 ```
