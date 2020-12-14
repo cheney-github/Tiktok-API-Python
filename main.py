@@ -3,7 +3,7 @@ import TiktokApi
 Api = TiktokApi.Tiktok()
 
 # get user info
-uid = Api.getUserId('vtkh2004')
+uid = Api.getUser('vtkh2004')
 # print(uid)
 
 #get user post
