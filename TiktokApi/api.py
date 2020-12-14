@@ -4,26 +4,15 @@ import base64
 import time
 import re
 import urllib.parse
+import pickle
 
 class Tiktok:
-	def __init__(self, cookie = None, verifyFp = None):
+	def __init__(self):
 		
 		self.BASE_URL = 'https://www.tiktok.com/node/'
-		self.cookie = cookie
-		self.verifyFp = verifyFp
 		self.headers = {
 			'user-agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.66 Safari/537.36 OPR/72.0.3815.378',
-			'cookie' : self.cookie
 			}
-
-	def getCookie(self, cookies):
-		ck = ''
-		if(cookies):
-			for value in cookies:
-				ck = ck + value + ':' + cookies[value]
-				ck = ck + '; '
-			return ck
-		return None
 
 	def getChallenge(self, challenge):
 		if(challenge == ''):
@@ -31,6 +20,7 @@ class Tiktok:
 		challenge = urllib.parse.quote(challenge)
 		url = self.BASE_URL + 'share/tag/' + challenge
 		data = requests.get(url, headers=self.headers)
+		self.save_cookies(data.cookies, 'cookie.txt')
 		try:
 			data = data.json()
 			return data['challengeInfo']
@@ -55,6 +45,7 @@ class Tiktok:
 				}
 			url = self.BASE_URL + 'video/feed'
 			data = requests.get(url, params=param, headers=self.headers)
+			self.save_cookies(data.cookies, 'cookie.txt')
 			try:
 				data = data.json()
 				return data['body']
@@ -68,6 +59,7 @@ class Tiktok:
 		musicId = urllib.parse.quote(musicId)
 		url = self.BASE_URL + 'share/music/original-sound-' + musicId
 		data = requests.get(url, headers=self.headers)
+		self.save_cookies(data.cookies, 'cookie.txt')
 		try:
 			data = data.json()
 			return data['musicInfo']
@@ -92,6 +84,7 @@ class Tiktok:
 				}
 			url = self.BASE_URL + 'video/feed'
 			data = requests.get(url, params=param, headers=self.headers)
+			self.save_cookies(data.cookies, 'cookie.txt')
 			try:
 				data = data.json()
 				return data['body']
@@ -114,6 +107,8 @@ class Tiktok:
 			}
 		url = self.BASE_URL + 'video/feed'
 		data = requests.get(url, params=param, headers=self.headers)
+		print(data.request.url)
+		self.save_cookies(data.cookies, 'cookie.txt')
 		try:
 			data = data.json()
 			return data['body']
@@ -126,6 +121,7 @@ class Tiktok:
 		username = urllib.parse.quote(username)
 		url = self.BASE_URL + 'share/user/@' + username
 		data = requests.get(url, headers=self.headers)
+		self.save_cookies(data.cookies, 'cookie.txt')
 		try:
 			data = data.json()
 			return data['userInfo']
@@ -150,6 +146,7 @@ class Tiktok:
 				}
 			url = self.BASE_URL + 'video/feed'
 			data = requests.get(url, params=param, headers=self.headers)
+			self.save_cookies(data.cookies, 'cookie.txt')
 			try:
 				data = data.json()
 				return data['body']
@@ -157,7 +154,24 @@ class Tiktok:
 				return False
 		return False
 
-	def getVideoById(self, vid):
+	def getInfoVideo(self, url):
+		s = requests.Session()
+		if(url == ''): return False
+		match = re.findall(r'https://www\.tiktok\.com/@(.*?)/video/([0-9]+)', url)
+		if(match):
+			username = match[0][0]
+			video_id = match[0][1]
+			api_url = 'https://www.tiktok.com/node/share/video/@' + username + '/' + video_id
+			data = s.get(api_url, headers=self.headers)
+			self.save_cookies(data.cookies, 'cookie.txt')
+			try:
+				data = data.json()
+				return data['itemInfo']['itemStruct']
+			except:
+				return False
+		return False
+
+	def getVideoId(self, vid):
 		if(vid == ''):
 			return False
 		base_url = 'https://api.wppress.net/tiktok/nwm/{}'.format(vid)
@@ -168,48 +182,23 @@ class Tiktok:
 		except:
 			return False
 
-	def getVideoByUrl(self, video_url):
-		if(video_url == ''):
-			return False
-		vid = re.findall(r'video\/([0-9]+)',video_url)[0]
-		base_url = 'https://api.wppress.net/tiktok/nwm/{}'.format(vid)
-		data = requests.get(base_url, headers=self.headers)
-		try:
-			data = data.json()
-			return data
-		except:
-			return False
-
-	def DownloadVideoByUrl(self, video_url):
-		# download video no water mark 
-		if(video_url == ''):
-			return False
-		video = self.getVideoByUrl(video_url)
-		if(video):
-			vid = video['id']
-			res = requests.get(f'https://api-h2.tiktokv.com/aweme/v1/play/?video_id={vid}&vr_type=0&is_play_url=1&source=PackSourceEnum_FEED&media_type=4&ratio=default&improve_bitrate=1', headers = {'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.66 Safari/537.36 OPR/72.0.3815.378', 'referer': 'https://www.tiktok.com/'})
-			with open('{}.mp4'.format(video['id']), 'wb') as fb:
-				fb.write(res.content)
-			return True
-		return False
-
-	def DownloadVideoById(self, vid):
-		# download video no water mark 
+	def DownloadVideoNoWatermark(self, vid, folder = '.'): 
 		if(vid == ''):
 			return False
-		video = self.getVideoById(vid)
+		video = self.getVideoId(vid)
 		if(video):
 			vid = video['id']
 			res = requests.get(f'https://api-h2.tiktokv.com/aweme/v1/play/?video_id={vid}&vr_type=0&is_play_url=1&source=PackSourceEnum_FEED&media_type=4&ratio=default&improve_bitrate=1', headers = {'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.66 Safari/537.36 OPR/72.0.3815.378', 'referer': 'https://www.tiktok.com/'})
-			with open('{}.mp4'.format(video['id']), 'wb') as fb:
+			with open('{}/{}.mp4'.format(folder, video['id']), 'wb') as fb:
 				fb.write(res.content)
 			return True
 		return False
 
+		
+	def save_cookies(self, requests_cookiejar, filename):
+		with open(filename, 'wb') as f:
+			pickle.dump(requests_cookiejar, f)
 
-
-
-
-
-
-				
+	def load_cookies(self, filename):
+		with open(filename, 'rb') as f:
+			return pickle.load(f)
